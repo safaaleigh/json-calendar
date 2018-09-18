@@ -26,9 +26,9 @@ var MONTHNAMES = [
 ];
 
 class Calendar {
-  constructor(props = {}) {
+  constructor(props = {}, callback = undefined) {
     // Use the provided value for today or use current date
-    const now = props.today || new Date();
+    const now = props.today instanceof Date ? props.today : new Date();
 
     const defaultState = {
       year: now.getFullYear(),
@@ -40,7 +40,7 @@ class Calendar {
       nextMonth: " "
     };
 
-    var today = this.createDate(
+    props.today = this.createDate(
       now.getFullYear(),
       now.getMonth(),
       now.getDate()
@@ -60,9 +60,10 @@ class Calendar {
     //   }
     // }
 
-    this.state = Object.assign({}, defaultState, { today });
+    if (callback) this.callback = callback;
+    this.state = Object.assign({}, defaultState, props);
 
-    this.buildWeeksArray();
+    this.createWeeksForMonth();
   }
 
   addDaysToDate(date, offset) {
@@ -74,10 +75,12 @@ class Calendar {
   }
 
   createWeeksForMonth(monthIndex, year = undefined) {
-    var nextState = Object.assign({}, this.state);
-    
-    if (year) nextState.year = year;
-    nextState.monthIndex = monthIndex;
+    monthIndex =
+      typeof monthIndex === "number" ? monthIndex : this.state.monthIndex;
+
+    year = year || this.state.year;
+
+    var nextState = Object.assign({}, this.state, { monthIndex, year });
 
     var classNames;
     var date;
@@ -88,8 +91,8 @@ class Calendar {
     // Start storing the JSON data into an object.
     var weeks = [];
 
-    var firstDate = this.createDate(options.year, options.monthIndex, 1);
-    var monthDays = this.getDaysInMonth(options.year, options.monthIndex);
+    var firstDate = this.createDate(year, monthIndex, 1);
+    var monthDays = this.getDaysInMonth(year, monthIndex);
     var firstDateIndex = firstDate.getDay();
 
     // Loop through week indexes (0..6)
@@ -128,8 +131,8 @@ class Calendar {
           i += 1;
 
           if (
-            options.showToday &&
-            date.toDateString() === this.today.toDateString()
+            nextState.showToday &&
+            date.toDateString() === nextState.today.toDateString()
           ) {
             classNames.push("today");
           }
@@ -155,15 +158,17 @@ class Calendar {
         week.push(day);
       }
 
-      nextState.weeks.push(week);
+      weeks.push(week);
     }
 
+    nextState.weeks = weeks;
     this.state = nextState;
+    if (this.callback) this.callback(nextState);
   }
 
   getDaysInMonth(yr, mo) {
-    yr = yr || this.today.getFullYear();
-    mo = mo || this.today.getMonth();
+    yr = yr || this.state.today.getFullYear();
+    mo = mo || this.state.today.getMonth();
     return new Date(yr, mo + 1, 0).getDate();
   }
 
