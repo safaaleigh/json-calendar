@@ -26,10 +26,11 @@ var MONTHNAMES = [
 ];
 
 class Calendar {
-  constructor(params = {}) {
-    const now = params.today || new Date();
+  constructor(props = {}) {
+    // Use the provided value for today or use current date
+    const now = props.today || new Date();
 
-    const defaults = {
+    const defaultState = {
       year: now.getFullYear(),
       monthIndex: now.getMonth(),
       abbreviate: 2,
@@ -39,55 +40,53 @@ class Calendar {
       nextMonth: " "
     };
 
-    this.options = Object.assign({}, defaults, params);
-
-    this.monthNames = MONTHNAMES;
-
-    this.today = this.createDate(
+    var today = this.createDate(
       now.getFullYear(),
       now.getMonth(),
       now.getDate()
     );
 
-    var data = {};
+    // var dayNames = [];
 
-    // Start storing the JSON data into an object.
-    data.dayNames = [];
+    // // Abbreviate the day names when configured to do so.
+    // for (var index = 0, len = DAYNAMES.length; index < len; index++) {
+    //   var dayName = DAYNAMES[index];
+    //   var dayAbbr = dayName.substr(0, this.state.abbreviate);
 
-    // Abbreviate the day names when configured to do so.
-    for (var index = 0, len = DAYNAMES.length; index < len; index++) {
-      var dayName = DAYNAMES[index];
-      var dayAbbr = dayName.substr(0, this.options.abbreviate);
+    //   if (dayAbbr !== dayName) {
+    //     data.dayNames[index] = { name: dayName, abbr: dayAbbr };
+    //   } else {
+    //     data.dayNames[index] = { name: dayName };
+    //   }
+    // }
 
-      if (dayAbbr !== dayName) {
-        data.dayNames[index] = { name: dayName, abbr: dayAbbr };
-      } else {
-        data.dayNames[index] = { name: dayName };
-      }
-    }
+    this.state = Object.assign({}, defaultState, { today });
 
     this.buildWeeksArray();
-
-    // data.nextMonth = this.getRelativeMonth(firstDate, 1);
-    // data.previousMonth = this.getRelativeMonth(firstDate, -1);
-    // data.currentMonth = this.getMonthName(firstDate.getMonth());
-
-    this.data = data;
   }
 
   addDaysToDate(date, offset) {
     return new Date(date.getTime() + offset * 24 * 60 * 60 * 1000);
   }
 
-  buildWeeksArray() {
+  createDate(yr, mo, day) {
+    return new Date(yr, mo, day, 0, 0);
+  }
+
+  createWeeksForMonth(monthIndex, year = undefined) {
+    var nextState = Object.assign({}, this.state);
+    
+    if (year) nextState.year = year;
+    nextState.monthIndex = monthIndex;
+
     var classNames;
     var date;
     var day;
     var i = 1;
     var week;
-    var options = this.options;
 
-    this.weeks = [];
+    // Start storing the JSON data into an object.
+    var weeks = [];
 
     var firstDate = this.createDate(options.year, options.monthIndex, 1);
     var monthDays = this.getDaysInMonth(options.year, options.monthIndex);
@@ -156,18 +155,10 @@ class Calendar {
         week.push(day);
       }
 
-      this.weeks.push(week);
+      nextState.weeks.push(week);
     }
-  }
 
-  changeMonth(year, monthIndex) {
-    this.options.year = year;
-    this.options.monthIndex = monthIndex;
-    this.buildWeeksArray();
-  }
-
-  createDate(yr, mo, day) {
-    return new Date(yr, mo, day, 0, 0);
+    this.state = nextState;
   }
 
   getDaysInMonth(yr, mo) {
